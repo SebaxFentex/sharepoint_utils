@@ -19,13 +19,13 @@ chromium` (una vez; Chromium bundled, sin `channel`).
 
 ```text
 src/sharepoint_utils/
-  __init__.py        # NullHandler + ClienteSharepoint + excepciones (NO re-exporta iniciar_sesion)
+  __init__.py        # NullHandler + ClienteSharepoint + excepciones (NO re-exporta login_manual)
   _log.py       # configurar_log() + purgar_logs() — sin efectos al importar
   _env.py        # carpeta_perfil() y parametros_ventana() — rutas fijas
   _excepciones.py    # ExcepcionNoAutenticado, ExcepcionCarpetaNoEncontrada, ExcepcionArchivoNoEncontrado
   cliente.py         # ClienteSharepoint + login_manual + _login_interactivo
   __main__.py        # renovar_autenticacion() para `python -m sharepoint_utils` (login manual)
-  _subida.py         # subir_archivos / subir_carpetas (internas, reciben pagina)
+  _carga.py          # cargar_archivos / cargar_carpetas (internas, reciben pagina)
   _descarga.py       # descargar_carpeta / descargar_archivo_compartido (internas)
 ejecutables/
   build.bat          # construye el paquete (`uv build`) y lista dist/
@@ -34,7 +34,7 @@ ejecutables/
   tests/             # un .bat por test (mismo nombre que el test)
 tests/
   test_*.py          # e2e contra SHAREPOINT_URL_CARPETA_PRUEBAS (exigen MFA humano; sin env, fallan con mensaje)
-  archivos/subida/      # fixtures locales (no usar rutas personales)
+  archivos/carga/        # fixtures autogenerados al arrancar (ignorados por git; no usar rutas personales)
   archivos/descarga/    # salida de descargas: se limpia antes de cada test, ignorada por git
 logs/                   # la crea configurar_log al correr tests o login (ignorada por git)
 ```
@@ -45,9 +45,9 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
   context manager con sesion persistente de Chromium. `correo_usuario` y
   `url_inicio` son requeridos, sin defaults. La validacion de sesion ocurre
   al entrar al `with` (no al construir). Metodos publicos:
-  `subir_archivos`, `subir_carpetas`, `descargar_carpeta`,
+  `cargar_archivos`, `cargar_carpetas`, `descargar_carpeta`,
   `descargar_archivo_compartido`.
-- `subir_carpetas` omite carpetas locales vacias. Para las no vacias,
+- `cargar_carpetas` omite carpetas locales vacias. Para las no vacias,
   elimina primero la carpeta homonima de SharePoint con su contenido;
   conserva archivos homonimos.
 - `cliente.login_manual(url_inicio=...) -> Path`: login standalone (sin
@@ -80,10 +80,10 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
    `ejecutables/tests/`. `abrir_vscode.bat` es utilitario: solo abre el
    editor y por eso no lleva `uv run`.
 5. **Prohibido `click(force=True)`**: salta accionabilidad y produce clics
-   fantasma (causo la intermitencia de la subida). Si un clic falla, que
+   fantasma (causo la intermitencia de la carga). Si un clic falla, que
    falle con diagnostico.
 6. **Prohibido `timeout=0`**: espera infinita (causo el pegue eterno de la
-   subida). Todo wait lleva deadline finito.
+   carga). Todo wait lleva deadline finito.
 7. **Reintentos con estado fresco** (recarga de pagina), nunca sobre UI a
    medio abrir. Sin fallback a input oculto (se probo: no sirve).
 8. **Un log por paso**: INFO auditable / DEBUG diagnostico / ERROR
@@ -121,7 +121,7 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
 
 ## 5. Scheduler y codigos de salida
 
-- `0` OK · `2` carpeta inexistente · `3` autenticacion · `4` archivo
+- `0` OK · `1` fallo generico · `2` carpeta inexistente · `3` autenticacion · `4` archivo
   compartido inexistente (corre `ejecutables/login.bat` en sesion
   interactiva y reintenta solo el 3).
 - La tarea corre como el **mismo usuario Windows** duenio del perfil, con
@@ -146,7 +146,7 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
 3. `uv build` OK.
 4. Greps de guardia: cero `force=True`, `input(` solo en
    `cliente.py`, cero `timeout=0`, cero `set_input_files` en el flujo
-   de subida, cero `load_dotenv` y cero `cwd(` en `src/`, cero
+   de carga, cero `load_dotenv` y cero `cwd(` en `src/`, cero
    `autenticacion` en el repo.
 
 ## 7. Historial de rupturas
@@ -223,3 +223,11 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
   `python -m sharepoint_utils`, logger `sharepoint_utils` y prefijo de log
   `sharepoint_utils-`. Las variables de entorno **siguen** siendo
   `SHAREPOINT_*` (describen el servicio, no el paquete).
+- **v1.4.0 (2026-11-02)**: ruptura `subir_*` → `cargar_*` (`_subida.py` pasa a
+  `_carga.py` con helpers, constantes `XPATH` y logs; metodos
+  `cargar_archivos`/`cargar_carpetas`; tests `test_cargar_*.py` + `.bat`
+  espejo; `tests/archivos/subida/` pasa a `carga/` y deja de versionarse: los
+  4 tests generan los 10 `.txt` deterministicos al arrancar, `carga/`
+  ignorada por git); `SystemExit` literales pasan a `exc.codigo_salida`;
+  nueva base `ExcepcionSharepoint` (codigo 1, codigos 2/3/4 intactos). Sin
+  compatibilidad heredada: actualizar llamadas y tag a `v1.4.0`.
