@@ -1,7 +1,7 @@
-"""Entry point para `python -m sharepoint` (login manual).
+"""Entry point para `python -m sharepoint_utils` (login manual).
 
 Uso:
-    python -m sharepoint [URL_INICIO]
+    python -m sharepoint_utils [URL_INICIO]
 
 Precedencia: argumento > SHAREPOINT_URL_INICIO > error con mensaje.
 """
@@ -12,8 +12,8 @@ import os
 
 def renovar_autenticacion(argumentos: list[str] | None = None) -> None:
     """Resuelve la URL, configura logs y corre el login interactivo standalone."""
-    from sharepoint._log import configurar_log
-    from sharepoint.cliente import login_manual
+    from sharepoint_utils._log import configurar_log
+    from sharepoint_utils.cliente import login_manual
 
     analizador = argparse.ArgumentParser(description="Login manual de SharePoint (MFA).")
     analizador.add_argument(
@@ -27,7 +27,7 @@ def renovar_autenticacion(argumentos: list[str] | None = None) -> None:
     url_inicio = opciones.url_inicio or os.environ.get("SHAREPOINT_URL_INICIO")
     if not url_inicio:
         raise SystemExit(
-            "Falta la URL de inicio: pasala como argumento (`python -m sharepoint <URL>`) "
+            "Falta la URL de inicio: pasala como argumento (`python -m sharepoint_utils <URL>`) "
             "o define SHAREPOINT_URL_INICIO en el .env (ver .env.example)."
         )
     configurar_log()

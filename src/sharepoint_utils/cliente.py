@@ -206,7 +206,7 @@ class ClienteSharepoint:
         self.cerrar()
         log.error("Sesión vencida")
         raise ExcepcionNoAutenticado(
-            "Sesion vencida. Inicia sesion con `python -m sharepoint <URL>` "
+            "Sesion vencida. Inicia sesion con `python -m sharepoint_utils <URL>` "
             "o define SHAREPOINT_URL_INICIO en el .env, en una sesion interactiva, "
             "y reintenta."
         )
@@ -256,7 +256,7 @@ def _esperar_mfa(pagina: Page, url_inicio: str) -> None:
 def login_manual(url_inicio: str) -> Path:
     """Login interactivo standalone (sin cliente): contexto temporal propio.
 
-    Usado por `python -m sharepoint` y `login.bat`. Como no hay cliente
+    Usado por `python -m sharepoint_utils` y `login.bat`. Como no hay cliente
     corriendo, no hay conflicto de lock con el perfil.
 
     Args:

@@ -1,4 +1,4 @@
-# AGENTS.md — sharepoint
+# AGENTS.md — sharepoint_utils
 
 Guia para agentes (y humanos) que trabajan en este repo. Las reglas con
 "porque" vienen de bugs reales; no relajarlas sin evidencia nueva.
@@ -11,25 +11,25 @@ Entra (restriccion corporativa: sin client_id propio; la via REST se probo
 y el tenant la bloquea) — por eso todo pasa por el navegador.
 
 Codigo, docstrings y `.env` en espanol (v0.3.0 rompio la API en ingles,
-v0.4.0 renombro el paquete `ms365` a `sharepoint`; ver seccion 7).
+v0.4.0 lo renombro a `sharepoint` y v1.3.0 a `sharepoint_utils`; ver seccion 7).
 SharePoint, Chromium, MFA y UniqueId son nombres propios y se conservan.
 
 Stack: Python 3.14, `uv`. Entorno: `uv sync` + `uv run playwright install
 chromium` (una vez; Chromium bundled, sin `channel`).
 
 ```text
-src/sharepoint/
+src/sharepoint_utils/
   __init__.py        # NullHandler + ClienteSharepoint + excepciones (NO re-exporta iniciar_sesion)
   _log.py       # configurar_log() + purgar_logs() — sin efectos al importar
   _env.py        # carpeta_perfil() y parametros_ventana() — rutas fijas
   _excepciones.py    # ExcepcionNoAutenticado, ExcepcionCarpetaNoEncontrada, ExcepcionArchivoNoEncontrado
   cliente.py         # ClienteSharepoint + login_manual + _login_interactivo
-  __main__.py        # renovar_autenticacion() para `python -m sharepoint` (login manual)
+  __main__.py        # renovar_autenticacion() para `python -m sharepoint_utils` (login manual)
   _subida.py         # subir_archivos / subir_carpetas (internas, reciben pagina)
   _descarga.py       # descargar_carpeta / descargar_archivo_compartido (internas)
 ejecutables/
   build.bat          # construye el paquete (`uv build`) y lista dist/
-  login.bat          # login/refresco manual: `uv run ... python -m sharepoint`
+  login.bat          # login/refresco manual: `uv run ... python -m sharepoint_utils`
   abrir_vscode.bat   # abre la raiz de la libreria en VS Code
   tests/             # un .bat por test (mismo nombre que el test)
 tests/
@@ -52,7 +52,7 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
   conserva archivos homonimos.
 - `cliente.login_manual(url_inicio=...) -> Path`: login standalone (sin
   cliente corriendo) con contexto temporal propio. Lo usa `python -m
-  sharepoint` y `login.bat`.
+  sharepoint_utils` y `login.bat`.
 - Ante sesion vencida con ventana + `permitir_login_interactivo`, el cliente
   reusa su propio contexto (`_login_interactivo`: pestaña nueva, Enter,
   cierre de pestaña) sin cerrar ni reabrir el navegador.
@@ -91,15 +91,15 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
    ni tests (el prompt al operador en `login_manual`/`_login_interactivo`
    es la unica excepcion).
 9. **Sin re-exports en `__init__`** de `login_manual` (superficie minima:
-   cliente + excepciones). Canonico: `from sharepoint.cliente import
-   login_manual`. `python -m sharepoint` corre `__main__.py`, sin problema
+   cliente + excepciones). Canonico: `from sharepoint_utils.cliente import
+   login_manual`. `python -m sharepoint_utils` corre `__main__.py`, sin problema
    de doble instancia de runpy.
 10. **Tamano de ventana centralizado** en `parametros_ventana()`: headed
     `no_viewport=True` (+ `--window-size` inicial), headless viewport
     1920×1080. `--start-maximized` no sirve (no toca el viewport).
 11. **Nada especulativo**: sin abstracciones de un solo uso, sin params de
     "por si acaso". Lo muerto se borra (queda en git si se necesita).
-12. **`.env` es del consumidor, no de la libreria**: `sharepoint` jamas
+12. **`.env` es del consumidor, no de la libreria**: `sharepoint_utils` jamas
     carga dotenv. Los entrypoints propios leen del entorno: `tests/*` y
     `__main__` leen `SHAREPOINT_URL_INICIO`, `SHAREPOINT_CORREO_USUARIO`,
     `SHAREPOINT_URL_CARPETA_PRUEBAS`, `SHAREPOINT_URL_ARCHIVO_COMPARTIDO`
@@ -114,7 +114,7 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
 - Archivo + consola via `configurar_log()` (una linea al inicio de cada
   entrypoint). Nivel por env `SHAREPOINT_NIVEL_LOG` (default INFO).
 - Archivos en la carpeta `logs/` del proyecto (utf-8). Prefijo y retencion
-  llegan por parametro (`prefijo="sharepoint-"`, `conservar=30`); purga a los
+  llegan por parametro (`prefijo="sharepoint_utils-"`, `conservar=30`); purga a los
   mas recientes.
 - Cada corrida genera su propio log: ante un fallo, leer **el de mayor
   timestamp**, nunca uno viejo.
@@ -134,7 +134,7 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
   ```bat
   @echo off
   cd /d "%~dp0..\python_<nombre>"
-  uv run python -m sharepoint https://empresa.sharepoint.com/.../Home.aspx
+  uv run python -m sharepoint_utils https://empresa.sharepoint.com/.../Home.aspx
   ```
   (Alternativa: `SHAREPOINT_URL_INICIO` en su `.env`.) El `login.bat` de la
   libreria usa el `.env` de desarrollo y no sirve en produccion.
@@ -216,3 +216,10 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
 - **v1.2.1 (2026-10-28)**: `[build-system]` con rango vigente
   (`uv_build>=0.13.0,<1.0`): el pin anterior `>=0.12.17,<0.13` no incluia
   la version instalada de `uv` y `uv build` advertia en cada corrida.
+- **v1.3.0 (2026-11-02)**: el paquete y la carpeta pasan de `sharepoint` a
+  `sharepoint_utils` (el nombre `sharepoint` describia el dominio, no una
+  libreria de utilidades, y colisionaba con el paquete homonimo de PyPI).
+  Imports `from sharepoint_utils import ...`, comando
+  `python -m sharepoint_utils`, logger `sharepoint_utils` y prefijo de log
+  `sharepoint_utils-`. Las variables de entorno **siguen** siendo
+  `SHAREPOINT_*` (describen el servicio, no el paquete).

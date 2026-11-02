@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from sharepoint import ClienteSharepoint, ExcepcionNoAutenticado
-from sharepoint._log import configurar_log
+from sharepoint_utils._log import configurar_log
 
 
 def _requerir_env(nombre: str) -> str:
@@ -20,7 +20,7 @@ CARPETA_SUBIDA = Path(__file__).resolve().parent / "archivos" / "subida"
 # folder_3 vacia, esta ultima se omite por estar vacia).
 CARPETAS_A_SUBIR = [str(p) for p in sorted(CARPETA_SUBIDA.iterdir()) if p.is_dir()]
 
-log = logging.getLogger("sharepoint")
+log = logging.getLogger("sharepoint_utils")
 
 def main() -> None:
     configurar_log()

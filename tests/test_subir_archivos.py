@@ -3,9 +3,9 @@ import os
 from pathlib import Path
 
 from sharepoint import ClienteSharepoint, ExcepcionNoAutenticado
-from sharepoint._log import configurar_log
+from sharepoint_utils._log import configurar_log
 
-log = logging.getLogger("sharepoint")
+log = logging.getLogger("sharepoint_utils")
 
 def _requerir_env(nombre: str) -> str:
     valor = os.environ.get(nombre)

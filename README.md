@@ -1,4 +1,4 @@
-# sharepoint
+# sharepoint_utils
 
 Libreria Python (paquete `uv_build`, layout `src/`) para operar SharePoint
 Online con Playwright + Chromium bundled. Autenticacion con usuario + MFA
@@ -9,17 +9,19 @@ corporativa; la via REST esta bloqueada por el tenant).
 
 ### 1. Declarar la dependencia
 
+Por **Git con tag fijo** (norma Tigo; nunca `editable` ni rutas relativas):
+
 ```toml
 [project]
-dependencies = ["sharepoint"]
+dependencies = ["sharepoint_utils"]
 
 [tool.uv.sources]
-sharepoint = { path = "../../../../Proyectos/1. PROPIOS/1.5 - Librerias/sharepoint", editable = true }
+sharepoint_utils = { git = "https://github.com/SebaxFentex/sharepoint_utils", tag = "v1.3.0" }
 ```
 
-(Ajustar los `../` a la profundidad real del `python_<nombre>`; luego
-`uv lock && uv sync`. Con `editable` el proyecto usa el codigo de la
-libreria en su carpeta real: los cambios se reflejan sin reinstalar.)
+(El `tag` fija el commit que se instala; para actualizar, cambiarlo y correr
+`uv lock && uv sync`. El repositorio es publico, no necesita credenciales.
+El tag vigente es el de la ultima seccion de `AGENTS.md`.)
 
 ### 2. Requisitos del proyecto consumidor
 
@@ -32,7 +34,7 @@ libreria en su carpeta real: los cambios se reflejan sin reinstalar.)
 ### 3. Ejemplo minimo
 
 ```python
-from sharepoint import ClienteSharepoint
+from sharepoint_utils import ClienteSharepoint
 
 with ClienteSharepoint(correo_usuario="usuario@empresa.com",
                        url_inicio="https://empresa.sharepoint.com/.../Home.aspx") as cliente:
@@ -42,14 +44,14 @@ with ClienteSharepoint(correo_usuario="usuario@empresa.com",
 ### 4. API publica
 
 ```python
-from sharepoint import (
+from sharepoint_utils import (
     ClienteSharepoint,
     ExcepcionArchivoNoEncontrado,
     ExcepcionCarpetaNoEncontrada,
     ExcepcionNoAutenticado,
 )
-from sharepoint.cliente import login_manual  # login interactivo standalone
-# (o doble clic a ejecutables/login.bat, que corre `python -m sharepoint`)
+from sharepoint_utils.cliente import login_manual  # login interactivo standalone
+# (o doble clic a ejecutables/login.bat, que corre `python -m sharepoint_utils`)
 ```
 
 `ClienteSharepoint(correo_usuario, url_inicio, mostrar_navegador=False, pausa_ms=0, permitir_login_interactivo=False)`:
@@ -88,11 +90,11 @@ con la URL como argumento (asi no necesita ninguna variable):
 ```bat
 @echo off
 cd /d "%~dp0..\python_<nombre>"
-uv run python -m sharepoint https://empresa.sharepoint.com/.../Home.aspx
+uv run python -m sharepoint_utils https://empresa.sharepoint.com/.../Home.aspx
 ```
 
 (Alternativa: `SHAREPOINT_URL_INICIO` en su `.env` y
-`uv run --env-file .env python -m sharepoint`.)
+`uv run --env-file .env python -m sharepoint_utils`.)
 
 **Si la sesion vence en produccion:** el cliente lanza
 `ExcepcionNoAutenticado` (con `codigo_salida = 3`) al entrar al `with`. El
@@ -128,13 +130,13 @@ Publicar: doble clic a `ejecutables/build.bat` (corre `uv build` y lista
 ### Estructura relevante
 
 ```text
-src/sharepoint/
+src/sharepoint_utils/
   __init__.py        # NullHandler + ClienteSharepoint + excepciones (NO re-exporta iniciar_sesion)
   _log.py            # configurar_log() para entrypoints (la libreria solo emite)
   _env.py            # rutas fijas del perfil en %LOCALAPPDATA%/perfil_playwright_sharepoint
   _excepciones.py    # ExcepcionNoAutenticado, ExcepcionCarpetaNoEncontrada
   cliente.py         # ClienteSharepoint + login_manual (login en propio contexto)
-  __main__.py        # renovar_autenticacion() para `python -m sharepoint` (login manual)
+  __main__.py        # renovar_autenticacion() para `python -m sharepoint_utils` (login manual)
   _subida.py         # subir_archivos / subir_carpetas (internas, reciben pagina)
   _descarga.py       # descargar_carpeta / descargar_archivo_compartido (internas)
 ejecutables/

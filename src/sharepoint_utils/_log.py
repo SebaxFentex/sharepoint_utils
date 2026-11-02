@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-PREFIJO_LOG_PREDETERMINADO = "sharepoint-"
+PREFIJO_LOG_PREDETERMINADO = "sharepoint_utils-"
 NIVEL_LOG_PREDETERMINADO = "INFO"
 MAX_LOGS_PREDETERMINADO = 30
 
@@ -39,7 +39,7 @@ def configurar_log(
 
     Nivel: parametro > env SHAREPOINT_NIVEL_LOG > NIVEL_LOG_PREDETERMINADO.
     Valor invalido cae a NIVEL_LOG_PREDETERMINADO. Prefijo y retencion llegan
-    por parametro (defaults "sharepoint-" y 30).
+    por parametro (defaults "sharepoint_utils-" y 30).
     El NullHandler que la libreria agrega en sharepoint/__init__.py no cuenta
     como configuracion: se ignora a proposito para poder configurarlo aqui.
     """
@@ -47,7 +47,7 @@ def configurar_log(
     if resuelto not in logging.getLevelNamesMapping():
         resuelto = NIVEL_LOG_PREDETERMINADO
 
-    logger = logging.getLogger("sharepoint")
+    logger = logging.getLogger("sharepoint_utils")
     if any(not isinstance(h, logging.NullHandler) for h in logger.handlers):
         return logger
 
