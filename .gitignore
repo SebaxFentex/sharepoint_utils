@@ -7,9 +7,8 @@ dist/
 # Configuracion local
 .env
 
-# Fixtures pesados y salidas de tests
-tests/archivos/descarga/
-tests/archivos/carga/
+# Fixtures y salidas de tests (los genera cada test, ignorados por git)
+tests/archivos/
 
 # Logs de desarrollo (los crea configurar_log al correr tests o login)
 logs/
