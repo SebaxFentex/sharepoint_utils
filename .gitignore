@@ -9,6 +9,7 @@ dist/
 
 # Fixtures pesados y salidas de tests
 tests/archivos/descarga/
+tests/archivos/carga/
 
 # Logs de desarrollo (los crea configurar_log al correr tests o login)
 logs/

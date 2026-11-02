@@ -5,9 +5,29 @@ Online con Playwright + Chromium bundled. Autenticacion con usuario + MFA
 sobre perfil dedicado persistente (sin app en Entra por restriccion
 corporativa; la via REST esta bloqueada por el tenant).
 
-## Que necesita el proyecto consumidor
+## Que hace y que no
 
-### 1. Declarar la dependencia
+Hace:
+
+- Cargar archivos y carpetas a SharePoint Online.
+- Descargar una carpeta como zip y extraerla.
+- Descargar un archivo desde su vinculo compartido.
+- Login manual con MFA sobre el perfil dedicado (`python -m
+  sharepoint_utils` o `ejecutables/login.bat`).
+
+No hace:
+
+- No carga ningun `.env`: recibe parametros explicitos. El proyecto
+  consumidor lee su propio `.env` y pasa los valores al crear el cliente.
+- No reintenta el MFA por su cuenta: ante sesion vencida falla rapido con
+  `ExcepcionNoAutenticado` (salvo opt-in explicito con
+  `permitir_login_interactivo=True` y ventana visible).
+- El `login.bat` de la libreria no sirve en produccion: cada proyecto
+  necesita su propio `login.bat` con la URL como argumento.
+- Nunca programar tareas con ventana: una sesion vencida con navegador
+  visible espera un humano que no hay y cuelga el slot del scheduler.
+
+## Como declararla
 
 Por **Git con tag fijo** (norma Tigo; nunca `editable` ni rutas relativas):
 
@@ -16,32 +36,42 @@ Por **Git con tag fijo** (norma Tigo; nunca `editable` ni rutas relativas):
 dependencies = ["sharepoint_utils"]
 
 [tool.uv.sources]
-sharepoint_utils = { git = "https://github.com/SebaxFentex/sharepoint_utils", tag = "v1.3.0" }
+sharepoint_utils = { git = "https://github.com/SebaxFentex/sharepoint_utils", tag = "v1.4.0" }
 ```
 
 (El `tag` fija el commit que se instala; para actualizar, cambiarlo y correr
 `uv lock && uv sync`. El repositorio es publico, no necesita credenciales.
 El tag vigente es el de la ultima seccion de `AGENTS.md`.)
 
-### 2. Requisitos del proyecto consumidor
+## Que necesita
 
 - Python 3.14+.
 - Chromium de Playwright instalado en su propio `.venv` (una vez por
   proyecto): `uv run playwright install chromium`.
-- Sesion iniciada en el perfil dedicado (ver Perfil y login; se hace una
-  vez por maquina con el `login.bat` de la libreria).
+- Sesion iniciada en el perfil dedicado (ver abajo; se hace una vez por
+  maquina con el `login.bat` de la libreria).
+- En produccion, correr como el **mismo usuario Windows** duenio del perfil,
+  con `mostrar_navegador=False`.
 
-### 3. Ejemplo minimo
+Perfil dedicado en `%LOCALAPPDATA%\perfil_playwright_sharepoint` por
+defecto (se cambia con `SHAREPOINT_CARPETA_PERFIL`). Primera vez o sesion
+vencida: doble clic a `ejecutables/login.bat` **de la libreria**, inicia
+sesion con MFA y pulsa Enter (sirve para primer login y refresco).
+
+Ninguna variable `SHAREPOINT_*` es obligatoria para importar y usar la
+libreria; solo configuran los entrypoints de desarrollo (ver abajo).
+
+## Ejemplo minimo
 
 ```python
 from sharepoint_utils import ClienteSharepoint
 
 with ClienteSharepoint(correo_usuario="usuario@empresa.com",
                        url_inicio="https://empresa.sharepoint.com/.../Home.aspx") as cliente:
-    cliente.subir_archivos({"https://empresa.sharepoint.com/.../Reportes": ["C:/archivos/enero.xlsx"]})
+    cliente.cargar_archivos({"https://empresa.sharepoint.com/.../Reportes": ["C:/archivos/enero.xlsx"]})
 ```
 
-### 4. API publica
+## API publica
 
 ```python
 from sharepoint_utils import (
@@ -56,9 +86,9 @@ from sharepoint_utils.cliente import login_manual  # login interactivo standalon
 
 `ClienteSharepoint(correo_usuario, url_inicio, mostrar_navegador=False, pausa_ms=0, permitir_login_interactivo=False)`:
 
-- `subir_archivos(archivos_por_carpeta)` — sube archivos a una o varias
+- `cargar_archivos(archivos_por_carpeta)` — carga archivos a una o varias
   carpetas de SharePoint.
-- `subir_carpetas(carpetas_por_carpeta)` — sube carpetas (omite las vacias;
+- `cargar_carpetas(carpetas_por_carpeta)` — carga carpetas (omite las vacias;
   reemplaza la carpeta homonima, conserva archivos homonimos).
 - `descargar_carpeta(url_carpeta, carpeta_destino)` — descarga la carpeta
   como zip y la extrae.
@@ -73,18 +103,21 @@ codigo 4), `ExcepcionNoAutenticado` (sesion vencida, codigo 3: corre
 `ejecutables/login.bat` en sesion interactiva y reintenta); `ValueError` si
 el vinculo compartido no permite construir la URL.
 
-Codigos de salida: `0` OK · `1` fallo generico (universales) · `2` carpeta
-inexistente · `3` autenticacion · `4` archivo no encontrado. Propaga el
-codigo sin repetir el numero: `sys.exit(exc.codigo_salida)`.
+## Codigos de salida
 
-### 5. Perfil y login
+`0` OK · `1` fallo generico · `2` carpeta inexistente · `3` autenticacion ·
+`4` archivo no encontrado. Propaga el codigo sin repetir el numero:
+`sys.exit(exc.codigo_salida)`.
 
-Perfil dedicado en `%LOCALAPPDATA%\perfil_playwright_sharepoint` por
-defecto (se cambia con `SHAREPOINT_CARPETA_PERFIL`). Primera vez o sesion
-vencida: doble clic a `ejecutables/login.bat` **de la libreria**, inicia
-sesion con MFA y pulsa Enter (sirve para primer login y refresco).
+**Si la sesion vence en produccion:** el cliente lanza
+`ExcepcionNoAutenticado` (con `codigo_salida = 3`) al entrar al `with`. El
+proyecto debe capturarla, salir con ese codigo y alertar al operador, que
+corre el `login.bat` del proyecto, hace el MFA y reejecuta. No hay
+reintento automatico (el MFA no se puede automatizar), salvo opt-in
+explicito con `permitir_login_interactivo=True` y ventana visible: en ese
+caso abre el login en la misma sesion y reintenta una vez.
 
-En produccion cada proyecto necesita su propio `ejecutables/login.bat`
+Cada proyecto consumidor necesita su propio `ejecutables/login.bat`
 con la URL como argumento (asi no necesita ninguna variable):
 
 ```bat
@@ -95,24 +128,10 @@ uv run python -m sharepoint_utils https://empresa.sharepoint.com/.../Home.aspx
 
 (Alternativa: `SHAREPOINT_URL_INICIO` en su `.env` y
 `uv run --env-file .env python -m sharepoint_utils`.)
+El `login.bat` de la libreria usa el `.env` de desarrollo y no sirve en
+produccion.
 
-**Si la sesion vence en produccion:** el cliente lanza
-`ExcepcionNoAutenticado` (con `codigo_salida = 3`) al entrar al `with`. El
-proyecto debe capturarla, salir con ese codigo y alertar al operador, que
-corre el `login.bat` del proyecto, hace el MFA y reejecuta. No hay
-reintento automatico (el MFA no se puede automatizar), salvo opt-in
-explicito con `permitir_login_interactivo=True` y ventana visible: en ese
-caso abre el login en la misma sesion y reintenta una vez.
-
-### 6. Variables de entorno
-
-La libreria no carga ningun `.env`: recibe parametros explicitos. El
-proyecto consumidor lee su propio `.env` y pasa los valores al crear el
-cliente. Ninguna variable `SHAREPOINT_*` es obligatoria para importar y
-usar la libreria; solo configuran los entrypoints de desarrollo (ver
-abajo).
-
-## Desarrollo de la libreria
+## Desarrollo
 
 Reglas inviolables, arquitectura interna y verificacion antes de publicar:
 ver `AGENTS.md`.
@@ -125,19 +144,20 @@ uv run playwright install chromium   # solo la primera vez
 ```
 
 Publicar: doble clic a `ejecutables/build.bat` (corre `uv build` y lista
-`dist/`), luego commit, tag `vX.Y.Z` y release en GitHub.
+`dist/`), luego commit, tag `vX.Y.Z` y `push --follow-tags` (sin releases en
+GitHub).
 
 ### Estructura relevante
 
 ```text
 src/sharepoint_utils/
-  __init__.py        # NullHandler + ClienteSharepoint + excepciones (NO re-exporta iniciar_sesion)
+  __init__.py        # NullHandler + ClienteSharepoint + excepciones (NO re-exporta login_manual)
   _log.py            # configurar_log() para entrypoints (la libreria solo emite)
   _env.py            # rutas fijas del perfil en %LOCALAPPDATA%/perfil_playwright_sharepoint
-  _excepciones.py    # ExcepcionNoAutenticado, ExcepcionCarpetaNoEncontrada
+  _excepciones.py    # ExcepcionSharepoint (base, codigo 1) + NoAutenticado (3), CarpetaNoEncontrada (2), ArchivoNoEncontrado (4)
   cliente.py         # ClienteSharepoint + login_manual (login en propio contexto)
   __main__.py        # renovar_autenticacion() para `python -m sharepoint_utils` (login manual)
-  _subida.py         # subir_archivos / subir_carpetas (internas, reciben pagina)
+  _carga.py          # cargar_archivos / cargar_carpetas (internas, reciben pagina)
   _descarga.py       # descargar_carpeta / descargar_archivo_compartido (internas)
 ejecutables/
   build.bat          # construye el paquete (`uv build`) y lista dist/
@@ -145,20 +165,20 @@ ejecutables/
   abrir_vscode.bat   # abre la raiz de la libreria en VS Code
   tests/             # un .bat por test (mismo nombre que el test)
 tests/
-  test_subir_archivos.py     # sube *.txt de archivos/subida/
-  test_subir_carpetas.py     # sube carpetas no vacias; reemplaza carpeta homonima
+  test_cargar_archivos.py      # carga los *.txt autogenerados de archivos/carga/
+  test_cargar_carpetas.py      # carga carpetas no vacias; reemplaza carpeta homonima
   test_descargar_carpetas.py # baja carpeta_1/2/3 a archivos/descarga/ (limpia antes)
   test_descargar_archivo.py  # baja archivo_1.txt a archivos/descarga/ (limpia y verifica)
-  archivos/subida/      # fixtures locales (archivo_*.txt, carpeta_1/2/3; carpeta_3 vacia)
-  archivos/descarga/    # salida de descargas (ignorada por git)
+  archivos/carga/     # fixtures autogenerados al arrancar (ignorados por git)
+  archivos/descarga/  # salida de descargas (ignorada por git)
 logs/                   # la crea configurar_log al correr tests o login (ignorada por git)
 ```
 
 ### Tests (e2e, exigen MFA humano)
 
 ```bash
-uv run --env-file .env python tests/test_subir_archivos.py
-uv run --env-file .env python tests/test_subir_carpetas.py
+uv run --env-file .env python tests/test_cargar_archivos.py
+uv run --env-file .env python tests/test_cargar_carpetas.py
 uv run --env-file .env python tests/test_descargar_carpetas.py
 uv run --env-file .env python tests/test_descargar_archivo.py
 ```
@@ -182,7 +202,7 @@ El `.env` local es solo para los entrypoints propios (tests, login).
 ### Log de ejecucion
 
 Cada corrida (tests o login) genera un log en la carpeta `logs/` del proyecto
-(`sharepoint-%Y%m%d-%H%M%S.log`, conserva los 30 recientes) y duplica a
+(`sharepoint_utils-%Y%m%d-%H%M%S.log`, conserva los 30 recientes) y duplica a
 consola. Ante un fallo, leer el de mayor timestamp.
 
 ## Licencia

@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 
-from sharepoint import (
+from sharepoint_utils import (
     ClienteSharepoint,
     ExcepcionArchivoNoEncontrado,
     ExcepcionNoAutenticado,
@@ -21,10 +21,37 @@ def _requerir_env(nombre: str) -> str:
 # Enlace compartido (?d=...) del archivo a descargar
 # (Compartir > Copiar vinculo). Configurable por env SHAREPOINT_URL_ARCHIVO_COMPARTIDO.
 URL_ARCHIVO_COMPARTIDO = _requerir_env("SHAREPOINT_URL_ARCHIVO_COMPARTIDO")
-CARPETA_SUBIDA = Path(__file__).resolve().parent / "archivos" / "subida"
+CARPETA_CARGA = Path(__file__).resolve().parent / "archivos" / "carga"
 CARPETA_DESCARGA = Path(__file__).resolve().parent / "archivos" / "descarga"
 CORREO_USUARIO = _requerir_env("SHAREPOINT_CORREO_USUARIO")
 URL_INICIO = _requerir_env("SHAREPOINT_URL_INICIO")
+
+# Fixtures autogenerados al arrancar (no versionados): 10 .txt con contenido
+# deterministico sin salto final (md5 identicos a los versionados en v1.3.0).
+# El de referencia para la comparacion es carga/archivo_1.txt.
+ESTRUCTURA_CARGA = {
+    "archivo_1.txt": "file_1",
+    "archivo_2.txt": "file_2",
+    "archivo_3.txt": "file_3",
+    "carpeta_1/archivo_11.txt": "file_11",
+    "carpeta_1/archivo_12.txt": "file_12",
+    "carpeta_2/archivo_21.txt": "file_21",
+    "carpeta_2/archivo_22.txt": "file_22",
+    "carpeta_2/carpeta_21/archivo_211.txt": "file_211",
+    "carpeta_2/carpeta_21/archivo_212.txt": "file_212",
+    "carpeta_2/carpeta_21/archivo_213.txt": "file_213",
+}
+
+
+def _preparar_fixtures_carga() -> None:
+    """Genera los 10 .txt de carga/ con contenido deterministico."""
+    for relativo, contenido in ESTRUCTURA_CARGA.items():
+        ruta = CARPETA_CARGA / relativo
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        ruta.write_text(contenido, encoding="utf-8")
+    (CARPETA_CARGA / "carpeta_3").mkdir(parents=True, exist_ok=True)
+    log.info("Fixtures de carga generados: %s", CARPETA_CARGA)
+
 
 def _limpiar_carpeta_descarga() -> Path:
     """Borra el contenido previo de descarga/ y lo recrea vacio."""
@@ -35,22 +62,23 @@ def _limpiar_carpeta_descarga() -> Path:
 
 def main() -> None:
     configurar_log()
+    _preparar_fixtures_carga()
     _limpiar_carpeta_descarga()
     try:
         with ClienteSharepoint(correo_usuario=CORREO_USUARIO, url_inicio=URL_INICIO, mostrar_navegador=True) as cliente:
             cliente.descargar_archivo_compartido(URL_ARCHIVO_COMPARTIDO, str(CARPETA_DESCARGA))
             log.info("OK: descarga de archivo completada: %s", CARPETA_DESCARGA)
-        esperado = (CARPETA_SUBIDA / "archivo_1.txt").read_text(encoding="utf-8")
+        esperado = (CARPETA_CARGA / "archivo_1.txt").read_text(encoding="utf-8")
         descargado = (CARPETA_DESCARGA / "archivo_1.txt").read_text(encoding="utf-8")
         if descargado != esperado:
             raise SystemExit("Contenido descargado distinto al original")
-        log.info("OK: contenido verificado contra upload/archivo_1.txt")
+        log.info("OK: contenido verificado contra carga/archivo_1.txt")
     except ExcepcionNoAutenticado as exc:
         log.error("Fallo autenticacion: %s", exc)
-        raise SystemExit(3) from exc
+        raise SystemExit(exc.codigo_salida) from exc
     except ExcepcionArchivoNoEncontrado as exc:
         log.error("Archivo no encontrado: %s", exc)
-        raise SystemExit(4) from exc
+        raise SystemExit(exc.codigo_salida) from exc
 
 if __name__ == "__main__":
     main()

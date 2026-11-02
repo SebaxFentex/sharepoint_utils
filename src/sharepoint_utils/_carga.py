@@ -1,4 +1,4 @@
-"""Operaciones de subida a SharePoint."""
+"""Operaciones de carga a SharePoint."""
 
 import logging
 from pathlib import Path
@@ -9,27 +9,27 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 log = logging.getLogger(__name__)
 
-XPATH_BOTON_CREAR_O_SUBIR = '//button[@data-automationid="newCommand"]'
-XPATH_BOTON_SUBIR_ARCHIVO = '//button[@data-automationid="uploadFile"]'
-XPATH_BOTON_SUBIR_CARPETA = '//button[@data-automationid="uploadFolder"]'
+XPATH_BOTON_CREAR_O_CARGAR = '//button[@data-automationid="newCommand"]'
+XPATH_BOTON_CARGAR_ARCHIVO = '//button[@data-automationid="uploadFile"]'
+XPATH_BOTON_CARGAR_CARPETA = '//button[@data-automationid="uploadFolder"]'
 
 
-def subir_archivos(
+def cargar_archivos(
     pagina: Page,
     correo_usuario: str,
     archivos_por_carpeta: dict[str, list[str]],
 ) -> None:
     for url_carpeta, rutas_archivos in archivos_por_carpeta.items():
-        _subir_archivos_a_carpeta(pagina, correo_usuario, url_carpeta, rutas_archivos)
+        _cargar_archivos_a_carpeta(pagina, correo_usuario, url_carpeta, rutas_archivos)
 
 
-def subir_carpetas(
+def cargar_carpetas(
     pagina: Page,
     correo_usuario: str,
     carpetas_por_carpeta: dict[str, list[str]],
 ) -> None:
     for url_carpeta, rutas_carpetas in carpetas_por_carpeta.items():
-        _subir_carpetas_a_carpeta(pagina, correo_usuario, url_carpeta, rutas_carpetas)
+        _cargar_carpetas_a_carpeta(pagina, correo_usuario, url_carpeta, rutas_carpetas)
 
 
 def _ir_a_carpeta(pagina: Page, correo_usuario: str, url_carpeta: str) -> None:
@@ -104,7 +104,7 @@ def _cargar_archivos(
     url_carpeta: str,
     intentos: int = 3,
 ) -> None:
-    """Sube rutas recargando la pagina en cada intento (el timing es flaky).
+    """Carga rutas recargando la pagina en cada intento (el timing es flaky).
 
     Por intento: recarga carpeta -> abre menu -> file chooser (5s).
     Sin fallback a input oculto: no sirve. Agotados los intentos
@@ -116,14 +116,14 @@ def _cargar_archivos(
             log.debug("Recargando carpeta (intento %d)", i)
         _ir_a_carpeta(pagina, correo_usuario, url_carpeta)
 
-        boton_subir = pagina.locator(XPATH_BOTON_CREAR_O_SUBIR)
-        boton_subir.wait_for(state="visible", timeout=30000)
-        boton_subir.click()
+        boton_cargar = pagina.locator(XPATH_BOTON_CREAR_O_CARGAR)
+        boton_cargar.wait_for(state="visible", timeout=30000)
+        boton_cargar.click()
 
         if tipo == "archivo":
-            boton_elegir = pagina.locator(XPATH_BOTON_SUBIR_ARCHIVO)
+            boton_elegir = pagina.locator(XPATH_BOTON_CARGAR_ARCHIVO)
         else:
-            boton_elegir = pagina.locator(XPATH_BOTON_SUBIR_CARPETA)
+            boton_elegir = pagina.locator(XPATH_BOTON_CARGAR_CARPETA)
         boton_elegir.wait_for(state="visible", timeout=10000)
         log.debug("Menú Cargar abierto (%s)", tipo)
 
@@ -140,12 +140,12 @@ def _cargar_archivos(
     raise ultimo_error
 
 
-def _esperar_fin_subida(pagina: Page, verbo: str) -> None:
+def _esperar_fin_carga(pagina: Page, verbo: str) -> None:
     """Espera el toast de progreso y confirma Reemplazar si aparece.
 
     Sin dialogo de reemplazo es el caso normal (no habia colision): DEBUG y
     salir. Si el dialogo aparece y falla el reintento, WARNING con detalle:
-    la subida ya ocurrio, propagar haria que el llamador repita todo.
+    la carga ya ocurrio, propagar haria que el llamador repita todo.
     """
     aviso_progreso = pagina.get_by_role("alert").filter(has_text=verbo)
     aviso_progreso.wait_for(state="attached", timeout=10000)
@@ -167,28 +167,28 @@ def _esperar_fin_subida(pagina: Page, verbo: str) -> None:
         log.warning("Reemplazo no confirmado: %s", error)
 
 
-def _subir_archivos_a_carpeta(
+def _cargar_archivos_a_carpeta(
     pagina: Page,
     correo_usuario: str,
     url_carpeta: str,
     rutas_archivos: list[str],
 ) -> None:
-    """Sube una lista de archivos a la carpeta destino."""
+    """Carga una lista de archivos a la carpeta destino."""
     normalizadas = [str(Path(ruta)) for ruta in rutas_archivos]
 
-    log.info("Subiendo %d archivo(s)", len(normalizadas))
+    log.info("Cargando %d archivo(s)", len(normalizadas))
     _cargar_archivos(pagina, correo_usuario, "archivo", normalizadas, url_carpeta)
-    _esperar_fin_subida(pagina, "Cargando")
-    log.info("Archivos subidos")
+    _esperar_fin_carga(pagina, "Cargando")
+    log.info("Archivos cargados")
 
 
-def _subir_carpetas_a_carpeta(
+def _cargar_carpetas_a_carpeta(
     pagina: Page,
     correo_usuario: str,
     url_carpeta: str,
     rutas_carpetas: list[str],
 ) -> None:
-    """Elimina una carpeta homonima y sube cada carpeta desde pagina fresca."""
+    """Elimina una carpeta homonima y carga cada carpeta desde pagina fresca."""
     normalizadas = [str(Path(ruta)) for ruta in rutas_carpetas]
 
     for ruta_carpeta in normalizadas:
@@ -198,9 +198,9 @@ def _subir_carpetas_a_carpeta(
             log.info("Carpeta vacía; se omite: %s", nombre_carpeta)
             continue
 
-        log.info("Subiendo carpeta: %s", nombre_carpeta)
+        log.info("Cargando carpeta: %s", nombre_carpeta)
         _ir_a_carpeta(pagina, correo_usuario, url_carpeta)
         _eliminar_carpeta_existente(pagina, nombre_carpeta)
         _cargar_archivos(pagina, correo_usuario, "carpeta", [ruta_carpeta], url_carpeta)
-        _esperar_fin_subida(pagina, "Actualizando")
-        log.info("Carpeta subida")
+        _esperar_fin_carga(pagina, "Actualizando")
+        log.info("Carpeta cargada")

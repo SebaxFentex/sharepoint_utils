@@ -1,6 +1,6 @@
 [project]
 name = "sharepoint_utils"
-version = "1.3.0"
+version = "1.4.0"
 description = "Utilidades para SharePoint con Playwright"
 readme = "README.md"
 authors = [
@@ -13,7 +13,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ipykernel==7.1.0",
+    "ipykernel==7.4.0",
 ]
 
 [build-system]

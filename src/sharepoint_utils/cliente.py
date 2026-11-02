@@ -8,7 +8,7 @@ from playwright.sync_api import BrowserContext, Page, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from . import _descarga, _subida
+from . import _carga, _descarga
 from ._env import carpeta_perfil, parametros_ventana
 from ._excepciones import ExcepcionNoAutenticado
 
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 class ClienteSharepoint:
     """
-    Cliente SharePoint con sesion persistente para subir y descargar recursos.
+    Cliente SharePoint con sesion persistente para cargar y descargar recursos.
 
     Mantiene el navegador y coordina las operaciones sobre su contexto.
 
@@ -101,38 +101,38 @@ class ClienteSharepoint:
             pass
         log.debug("Navegador cerrado")
 
-    def subir_archivos(self, archivos_por_carpeta: dict[str, list[str]]) -> None:
+    def cargar_archivos(self, archivos_por_carpeta: dict[str, list[str]]) -> None:
         """
-        Sube archivos a una o varias carpetas de SharePoint.
+        Carga archivos a una o varias carpetas de SharePoint.
 
         Args:
             archivos_por_carpeta: Diccionario donde la clave es la URL de la carpeta
                              destino en SharePoint y el valor es una lista de
-                             rutas de archivos locales a subir.
+                             rutas de archivos locales a cargar.
 
         Raises:
             ExcepcionNoAutenticado: si no hay sesion valida o contexto disponible.
         """
-        log.info("Subida de archivos: %d destino(s)", len(archivos_por_carpeta))
+        log.info("Carga de archivos: %d destino(s)", len(archivos_por_carpeta))
         with self._pagina() as pagina:
-            _subida.subir_archivos(pagina, self.correo_usuario, archivos_por_carpeta)
-        log.info("Subida de archivos completa")
+            _carga.cargar_archivos(pagina, self.correo_usuario, archivos_por_carpeta)
+        log.info("Carga de archivos completa")
 
-    def subir_carpetas(self, carpetas_por_carpeta: dict[str, list[str]]) -> None:
+    def cargar_carpetas(self, carpetas_por_carpeta: dict[str, list[str]]) -> None:
         """
-        Sube carpetas a una o varias carpetas destino de SharePoint.
+        Carga carpetas a una o varias carpetas destino de SharePoint.
 
-        Antes de subir cada carpeta, elimina una carpeta existente con el
+        Antes de cargar cada carpeta, elimina una carpeta existente con el
         mismo nombre. Los archivos con ese nombre se conservan.
 
         Raises:
             ExcepcionNoAutenticado: si no hay sesion valida o contexto disponible.
             RuntimeError: si no se puede identificar el tipo de un elemento coincidente.
         """
-        log.info("Subida de carpetas: %d destino(s)", len(carpetas_por_carpeta))
+        log.info("Carga de carpetas: %d destino(s)", len(carpetas_por_carpeta))
         with self._pagina() as pagina:
-            _subida.subir_carpetas(pagina, self.correo_usuario, carpetas_por_carpeta)
-        log.info("Subida de carpetas completa")
+            _carga.cargar_carpetas(pagina, self.correo_usuario, carpetas_por_carpeta)
+        log.info("Carga de carpetas completa")
 
     def descargar_carpeta(self, url_carpeta: str, carpeta_destino: str) -> None:
         """Descarga una carpeta SharePoint como zip y la extrae.

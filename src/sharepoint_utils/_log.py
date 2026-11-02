@@ -35,12 +35,12 @@ def configurar_log(
     prefijo: str = PREFIJO_LOG_PREDETERMINADO,
     conservar: int = MAX_LOGS_PREDETERMINADO,
 ) -> logging.Logger:
-    """Configura archivo + consola para el logger "sharepoint". Idempotente.
+    """Configura archivo + consola para el logger "sharepoint_utils". Idempotente.
 
     Nivel: parametro > env SHAREPOINT_NIVEL_LOG > NIVEL_LOG_PREDETERMINADO.
     Valor invalido cae a NIVEL_LOG_PREDETERMINADO. Prefijo y retencion llegan
     por parametro (defaults "sharepoint_utils-" y 30).
-    El NullHandler que la libreria agrega en sharepoint/__init__.py no cuenta
+    El NullHandler que la libreria agrega en sharepoint_utils/__init__.py no cuenta
     como configuracion: se ignora a proposito para poder configurarlo aqui.
     """
     resuelto = (nivel or os.environ.get("SHAREPOINT_NIVEL_LOG", NIVEL_LOG_PREDETERMINADO)).upper()

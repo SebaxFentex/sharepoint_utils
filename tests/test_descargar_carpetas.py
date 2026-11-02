@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 
-from sharepoint import (
+from sharepoint_utils import (
     ClienteSharepoint,
     ExcepcionCarpetaNoEncontrada,
     ExcepcionNoAutenticado,
@@ -20,14 +20,41 @@ def _requerir_env(nombre: str) -> str:
 
 URL_CARPETA_BASE = _requerir_env("SHAREPOINT_URL_CARPETA_PRUEBAS")
 
-# Carpetas subidas por test_upload_folders.
+# Carpetas cargadas por test_cargar_carpetas.py.
 CARPETAS_A_DESCARGAR = ["carpeta_1", "carpeta_2", "carpeta_3"]
+CARPETA_CARGA = Path(__file__).resolve().parent / "archivos" / "carga"
 CARPETA_DESCARGA = Path(__file__).resolve().parent / "archivos" / "descarga"
 CORREO_USUARIO = _requerir_env("SHAREPOINT_CORREO_USUARIO")
 URL_INICIO = _requerir_env("SHAREPOINT_URL_INICIO")
 
+# Fixtures autogenerados al arrancar (no versionados): 10 .txt con contenido
+# deterministico sin salto final (md5 identicos a los versionados en v1.3.0).
+ESTRUCTURA_CARGA = {
+    "archivo_1.txt": "file_1",
+    "archivo_2.txt": "file_2",
+    "archivo_3.txt": "file_3",
+    "carpeta_1/archivo_11.txt": "file_11",
+    "carpeta_1/archivo_12.txt": "file_12",
+    "carpeta_2/archivo_21.txt": "file_21",
+    "carpeta_2/archivo_22.txt": "file_22",
+    "carpeta_2/carpeta_21/archivo_211.txt": "file_211",
+    "carpeta_2/carpeta_21/archivo_212.txt": "file_212",
+    "carpeta_2/carpeta_21/archivo_213.txt": "file_213",
+}
+
+
+def _preparar_fixtures_carga() -> None:
+    """Genera los 10 .txt de carga/ con contenido deterministico."""
+    for relativo, contenido in ESTRUCTURA_CARGA.items():
+        ruta = CARPETA_CARGA / relativo
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        ruta.write_text(contenido, encoding="utf-8")
+    (CARPETA_CARGA / "carpeta_3").mkdir(parents=True, exist_ok=True)
+    log.info("Fixtures de carga generados: %s", CARPETA_CARGA)
+
+
 def _limpiar_carpeta_descarga() -> Path:
-    """Borra el contenido previo de download/ y lo recrea vacio."""
+    """Borra el contenido previo de descarga/ y lo recrea vacio."""
     shutil.rmtree(CARPETA_DESCARGA, ignore_errors=True)
     CARPETA_DESCARGA.mkdir(parents=True, exist_ok=True)
     log.info("Carpeta de descarga limpia: %s", CARPETA_DESCARGA)
@@ -35,6 +62,7 @@ def _limpiar_carpeta_descarga() -> Path:
 
 def main() -> None:
     configurar_log()
+    _preparar_fixtures_carga()
     _limpiar_carpeta_descarga()
     try:
         with ClienteSharepoint(correo_usuario=CORREO_USUARIO, url_inicio=URL_INICIO, mostrar_navegador=True) as descargador:
@@ -45,10 +73,10 @@ def main() -> None:
                 log.info("OK: %s descargada en: %s", nombre, destino)
     except ExcepcionCarpetaNoEncontrada as exc:
         log.error("Carpeta no encontrada: %s", exc)
-        raise SystemExit(2) from exc
+        raise SystemExit(exc.codigo_salida) from exc
     except ExcepcionNoAutenticado as exc:
         log.error("Fallo autenticacion: %s", exc)
-        raise SystemExit(3) from exc
+        raise SystemExit(exc.codigo_salida) from exc
 
 if __name__ == "__main__":
     main()
