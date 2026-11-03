@@ -20,7 +20,6 @@ chromium` (una vez; Chromium bundled, sin `channel`).
 ```text
 src/sharepoint_utils/
   __init__.py        # NullHandler + ClienteSharepoint + excepciones (NO re-exporta login_manual)
-  _log.py       # configurar_log() + purgar_logs() — sin efectos al importar
   _env.py        # carpeta_perfil() y parametros_ventana() — rutas fijas
   _excepciones.py    # ExcepcionNoAutenticado, ExcepcionCarpetaNoEncontrada, ExcepcionArchivoNoEncontrado
   cliente.py         # ClienteSharepoint + login_manual + _login_interactivo
@@ -72,7 +71,7 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
    espera humanos: las corridas van al scheduler y deben fallar rapido
    (ver seccion 5).
 3. **La libreria emite, el entrypoint configura**: `getLogger(__name__)` +
-   `NullHandler` en el paquete; `configurar_log()` solo se llama desde
+   `NullHandler` en el paquete; `log_utils.configurar_log()` solo se llama desde
    `tests/*` y `__main__.renovar_autenticacion()`. Jamas configurar logging en
    `__init__` ni en constructores.
 4. **`.bat` de proceso en `ejecutables/` invocando `uv run`** (nada de
@@ -111,11 +110,13 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
 
 ## 4. Log de ejecucion
 
-- Archivo + consola via `configurar_log()` (una linea al inicio de cada
-  entrypoint). Nivel por env `SHAREPOINT_NIVEL_LOG` (default INFO).
-- Archivos en la carpeta `logs/` del proyecto (utf-8). Prefijo y retencion
-  llegan por parametro (`prefijo="sharepoint_utils-"`, `conservar=30`); purga a los
-  mas recientes.
+- Archivo + consola via `log_utils.configurar_log()` (una linea al inicio de
+  cada entrypoint): archivo en DEBUG y consola en INFO, cada uno con su
+  formato. Niveles por env `SHAREPOINT_NIVEL_LOG` (opcional; defaults
+  DEBUG/INFO).
+- Archivos en la carpeta `logs/` del proyecto (utf-8). Nombre, prefijo y
+  retencion llegan por parametro (`nombre="sharepoint_utils"`,
+  `prefijo="sharepoint_utils-"`, `conservar=30`); purga a los mas recientes.
 - Cada corrida genera su propio log: ante un fallo, leer **el de mayor
   timestamp**, nunca uno viejo.
 
@@ -231,3 +232,7 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
   ignorada por git); `SystemExit` literales pasan a `exc.codigo_salida`;
   nueva base `ExcepcionSharepoint` (codigo 1, codigos 2/3/4 intactos). Sin
   compatibilidad heredada: actualizar llamadas y tag a `v1.4.0`.
+- **v1.5.0 (2026-11-02)**: logging via `log_utils` (v0.1.0, dependencia por
+  Git con tag): se elimina `src/sharepoint_utils/_log.py`; tests y
+  `__main__.renovar_autenticacion` llaman `log_utils.configurar_log` con
+  archivo en DEBUG y consola en INFO.

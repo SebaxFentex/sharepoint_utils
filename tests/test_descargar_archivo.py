@@ -8,7 +8,7 @@ from sharepoint_utils import (
     ExcepcionArchivoNoEncontrado,
     ExcepcionNoAutenticado,
 )
-from sharepoint_utils._log import configurar_log
+from log_utils import configurar_log
 
 log = logging.getLogger("sharepoint_utils")
 
@@ -61,7 +61,13 @@ def _limpiar_carpeta_descarga() -> Path:
     return CARPETA_DESCARGA
 
 def main() -> None:
-    configurar_log()
+    configurar_log(
+        nombre="sharepoint_utils",
+        carpeta_logs=Path(__file__).resolve().parent.parent / "logs",
+        nivel_archivo=os.environ.get("SHAREPOINT_NIVEL_LOG"),
+        nivel_consola=os.environ.get("SHAREPOINT_NIVEL_LOG"),
+        prefijo="sharepoint_utils-",
+    )
     _preparar_fixtures_carga()
     _limpiar_carpeta_descarga()
     try:

@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from sharepoint_utils import ClienteSharepoint, ExcepcionNoAutenticado
-from sharepoint_utils._log import configurar_log
+from log_utils import configurar_log
 
 
 def _requerir_env(nombre: str) -> str:
@@ -51,7 +51,13 @@ def _preparar_fixtures_carga() -> list[str]:
 log = logging.getLogger("sharepoint_utils")
 
 def main() -> None:
-    configurar_log()
+    configurar_log(
+        nombre="sharepoint_utils",
+        carpeta_logs=Path(__file__).resolve().parent.parent / "logs",
+        nivel_archivo=os.environ.get("SHAREPOINT_NIVEL_LOG"),
+        nivel_consola=os.environ.get("SHAREPOINT_NIVEL_LOG"),
+        prefijo="sharepoint_utils-",
+    )
     carpetas_a_cargar = _preparar_fixtures_carga()
     try:
         with ClienteSharepoint(correo_usuario=CORREO_USUARIO, url_inicio=URL_INICIO, mostrar_navegador=True) as cargador:

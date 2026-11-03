@@ -36,7 +36,7 @@ Por **Git con tag fijo** (norma Tigo; nunca `editable` ni rutas relativas):
 dependencies = ["sharepoint_utils"]
 
 [tool.uv.sources]
-sharepoint_utils = { git = "https://github.com/SebaxFentex/sharepoint_utils", tag = "v1.4.0" }
+sharepoint_utils = { git = "https://github.com/SebaxFentex/sharepoint_utils", tag = "v1.5.0" }
 ```
 
 (El `tag` fija el commit que se instala; para actualizar, cambiarlo y correr
@@ -152,7 +152,6 @@ GitHub).
 ```text
 src/sharepoint_utils/
   __init__.py        # NullHandler + ClienteSharepoint + excepciones (NO re-exporta login_manual)
-  _log.py            # configurar_log() para entrypoints (la libreria solo emite)
   _env.py            # rutas fijas del perfil en %LOCALAPPDATA%/perfil_playwright_sharepoint
   _excepciones.py    # ExcepcionSharepoint (base, codigo 1) + NoAutenticado (3), CarpetaNoEncontrada (2), ArchivoNoEncontrado (4)
   cliente.py         # ClienteSharepoint + login_manual (login en propio contexto)

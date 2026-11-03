@@ -269,6 +269,11 @@ wheels = [
 ]
 
 [[package]]
+name = "log-utils"
+version = "0.1.0"
+source = { git = "https://github.com/SebaxFentex/log_utils?tag=v0.1.0#ea1f8179d57a56d56732ed64acc2ae2f6ea2322a" }
+
+[[package]]
 name = "matplotlib-inline"
 version = "0.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -489,9 +494,10 @@ wheels = [
 
 [[package]]
 name = "sharepoint-utils"
-version = "1.4.0"
+version = "1.5.0"
 source = { editable = "." }
 dependencies = [
+    { name = "log-utils" },
     { name = "playwright" },
 ]
 
@@ -501,7 +507,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "playwright", specifier = "==1.62.0" }]
+requires-dist = [
+    { name = "log-utils", git = "https://github.com/SebaxFentex/log_utils?tag=v0.1.0" },
+    { name = "playwright", specifier = "==1.62.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [{ name = "ipykernel", specifier = "==7.4.0" }]

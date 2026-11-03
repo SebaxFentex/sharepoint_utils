@@ -1,6 +1,6 @@
 [project]
 name = "sharepoint_utils"
-version = "1.4.0"
+version = "1.5.0"
 description = "Utilidades para SharePoint con Playwright"
 readme = "README.md"
 authors = [
@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "playwright==1.62.0",
+    "log_utils",
 ]
 
 [dependency-groups]
@@ -19,3 +20,6 @@ dev = [
 [build-system]
 requires = ["uv_build>=0.13.0,<1.0"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+log_utils = { git = "https://github.com/SebaxFentex/log_utils", tag = "v0.1.0" }
