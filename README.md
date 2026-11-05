@@ -13,7 +13,7 @@ Hace:
 - Descargar una carpeta como zip y extraerla.
 - Descargar un archivo desde su vinculo compartido.
 - Login manual con MFA sobre el perfil dedicado (`python -m
-  sharepoint_utils` o `ejecutables/login.bat`).
+  sharepoint_utils` o `Ejecutables/login.bat`).
 
 No hace:
 
@@ -55,7 +55,7 @@ El tag vigente es el de la ultima seccion de `AGENTS.md`.)
 
 Perfil dedicado en `%LOCALAPPDATA%\perfil_playwright_sharepoint` por
 defecto (se cambia con `SHAREPOINT_CARPETA_PERFIL`). Primera vez o sesion
-vencida: doble clic a `ejecutables/login.bat` **de la libreria**, inicia
+vencida: doble clic a `Ejecutables/login.bat` **de la libreria**, inicia
 sesion con MFA y pulsa Enter (sirve para primer login y refresco).
 
 Ninguna variable `SHAREPOINT_*` es obligatoria para importar y usar la
@@ -81,7 +81,7 @@ from sharepoint_utils import (
     ExcepcionNoAutenticado,
 )
 from sharepoint_utils.cliente import login_manual  # login interactivo standalone
-# (o doble clic a ejecutables/login.bat, que corre `python -m sharepoint_utils`)
+# (o doble clic a Ejecutables/login.bat, que corre `python -m sharepoint_utils`)
 ```
 
 `ClienteSharepoint(correo_usuario, url_inicio, mostrar_navegador=False, pausa_ms=0, permitir_login_interactivo=False)`:
@@ -100,7 +100,7 @@ from sharepoint_utils.cliente import login_manual  # login interactivo standalon
 Errores por excepcion: `ExcepcionCarpetaNoEncontrada` (carpeta inexistente,
 codigo 2), `ExcepcionArchivoNoEncontrado` (archivo compartido inexistente,
 codigo 4), `ExcepcionNoAutenticado` (sesion vencida, codigo 3: corre
-`ejecutables/login.bat` en sesion interactiva y reintenta); `ValueError` si
+`Ejecutables/login.bat` en sesion interactiva y reintenta); `ValueError` si
 el vinculo compartido no permite construir la URL.
 
 ## Codigos de salida
@@ -117,7 +117,7 @@ reintento automatico (el MFA no se puede automatizar), salvo opt-in
 explicito con `permitir_login_interactivo=True` y ventana visible: en ese
 caso abre el login en la misma sesion y reintenta una vez.
 
-Cada proyecto consumidor necesita su propio `ejecutables/login.bat`
+Cada proyecto consumidor necesita su propio `Ejecutables/login.bat`
 con la URL como argumento (asi no necesita ninguna variable):
 
 ```bat
@@ -143,7 +143,7 @@ uv sync
 uv run playwright install chromium   # solo la primera vez
 ```
 
-Publicar: doble clic a `ejecutables/build.bat` (corre `uv build` y lista
+Publicar: doble clic a `Ejecutables/build.bat` (corre `uv build` y lista
 `dist/`), luego commit, tag `vX.Y.Z` y `push --follow-tags` (sin releases en
 GitHub).
 
@@ -158,7 +158,7 @@ src/sharepoint_utils/
   __main__.py        # renovar_autenticacion() para `python -m sharepoint_utils` (login manual)
   _carga.py          # cargar_archivos / cargar_carpetas (internas, reciben pagina)
   _descarga.py       # descargar_carpeta / descargar_archivo_compartido (internas)
-ejecutables/
+Ejecutables/
   build.bat          # construye el paquete (`uv build`) y lista dist/
   login.bat          # abre el perfil para login/refresco manual
   abrir_vscode.bat   # abre la raiz de la libreria en VS Code
@@ -182,7 +182,7 @@ uv run --env-file .env python tests/test_descargar_carpetas.py
 uv run --env-file .env python tests/test_descargar_archivo.py
 ```
 
-O con doble clic, un `.bat` por test en `ejecutables/tests/` (mismo nombre
+O con doble clic, un `.bat` por test en `Ejecutables/tests/` (mismo nombre
 que el test; deja ver el codigo de salida antes de cerrar).
 
 Requieren `SHAREPOINT_CORREO_USUARIO`, `SHAREPOINT_URL_INICIO`,

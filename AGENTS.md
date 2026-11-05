@@ -26,7 +26,7 @@ src/sharepoint_utils/
   __main__.py        # renovar_autenticacion() para `python -m sharepoint_utils` (login manual)
   _carga.py          # cargar_archivos / cargar_carpetas (internas, reciben pagina)
   _descarga.py       # descargar_carpeta / descargar_archivo_compartido (internas)
-ejecutables/
+Ejecutables/
   build.bat          # construye el paquete (`uv build`) y lista dist/
   login.bat          # login/refresco manual: `uv run ... python -m sharepoint_utils`
   abrir_vscode.bat   # abre la raiz de la libreria en VS Code
@@ -74,9 +74,9 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
    `NullHandler` en el paquete; `log_utils.configurar_log()` solo se llama desde
    `tests/*` y `__main__.renovar_autenticacion()`. Jamas configurar logging en
    `__init__` ni en constructores.
-4. **`.bat` de proceso en `ejecutables/` invocando `uv run`** (nada de
+4. **`.bat` de proceso en `Ejecutables/` invocando `uv run`** (nada de
    `python -c` con quoting). Un `.bat` por cada test vive en
-   `ejecutables/tests/`. `abrir_vscode.bat` es utilitario: solo abre el
+   `Ejecutables/tests/`. `abrir_vscode.bat` es utilitario: solo abre el
    editor y por eso no lleva `uv run`.
 5. **Prohibido `click(force=True)`**: salta accionabilidad y produce clics
    fantasma (causo la intermitencia de la carga). Si un clic falla, que
@@ -123,14 +123,14 @@ logs/                   # la crea configurar_log al correr tests o login (ignora
 ## 5. Scheduler y codigos de salida
 
 - `0` OK · `1` fallo generico · `2` carpeta inexistente · `3` autenticacion · `4` archivo
-  compartido inexistente (corre `ejecutables/login.bat` en sesion
+  compartido inexistente (corre `Ejecutables/login.bat` en sesion
   interactiva y reintenta solo el 3).
 - La tarea corre como el **mismo usuario Windows** duenio del perfil, con
   `mostrar_navegador=False`. Sesion muerta = exit 3, sin reintento automatico
   (con MFA no hay refresh desatendido posible). Nunca programar tareas con
   ventana: una sesion vencida con navegador visible espera un humano que no
   hay y cuelga el slot del scheduler.
-- Cada proyecto consumidor necesita su propio `ejecutables/login.bat`
+- Cada proyecto consumidor necesita su propio `Ejecutables/login.bat`
   con la URL como argumento (cero variables en produccion):
   ```bat
   @echo off
